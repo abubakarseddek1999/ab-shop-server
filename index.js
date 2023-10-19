@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const app =express();
+const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -32,23 +32,52 @@ async function run() {
     const database = client.db("productDB");
     const productCollection = database.collection("product");
 
-    app.get('/product', async(req,res)=>{
-        const cursor = productCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
+    app.get('/product', async (req, res) => {
+      const cursor = productCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
     })
 
-    app.post('/product', async(req,res)=>{
-        const newProduct = req.body;
-        console.log(newProduct);
-        const result = await productCollection.insertOne(newProduct);
-        res.send(result)
+    app.get('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await productCollection.findOne(query);
+      res.send(result);
     })
 
-    app.delete('/product/:id', async (req, res)=>{
-      const id =req.params.id;
-      const query ={_id: new ObjectId(id)}
-      const result =await productCollection.deleteOne(query);
+    app.post('/product', async (req, res) => {
+      const newProduct = req.body;
+      console.log(newProduct);
+      const result = await productCollection.insertOne(newProduct);
+      res.send(result)
+    })
+
+    app.put('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatedProduct =req.body;
+      const Product = {
+        $set: {
+          name : updatedProduct.name,
+           price: updatedProduct.price,
+           rating: updatedProduct.rating,
+           type: updatedProduct.type,
+           details: updatedProduct.details,
+           brand: updatedProduct.brand,
+           photo: updatedProduct.photo
+
+        }
+      }
+      const result = await productCollection.updateOne(filter, Product, options )
+      res.send(result)
+
+    })
+
+    app.delete('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await productCollection.deleteOne(query);
       res.send(result);
     })
 
@@ -66,10 +95,10 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req,res)=> {
-    res.send('ab-technology server running')
+app.get('/', (req, res) => {
+  res.send('ab-technology server running')
 })
 
-app.listen(port, ()=>{
-    console.log(`ab-technology-server is running on port: ${port}`)
+app.listen(port, () => {
+  console.log(`ab-technology-server is running on port: ${port}`)
 })
